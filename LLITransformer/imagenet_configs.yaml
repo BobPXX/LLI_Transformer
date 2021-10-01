@@ -1,0 +1,30 @@
+dir:
+  save_model_dir: /home/pan/Desktop/pytorch_LLITransformer/checkpoints/imagenet.pth
+  load_model_dir: /home/pan/Desktop/pytorch_LLITransformer/checkpoints/imagenet.pth
+  psf_dir: /home/pan/Desktop/pytorch_LLITransformer/utils/psf15.npy
+  train_filename_dir: /home/pan/Desktop/dataset/imagenet2012/train_filename.npy
+  train_labels_dir: /home/pan/Desktop/dataset/imagenet2012/train_labels.npy
+  val_filename_dir: /home/pan/Desktop/dataset/imagenet2012/val_filename.npy
+  val_labels_dir: /home/pan/Desktop/dataset/imagenet2012/val_labels.npy
+
+
+basic:
+  seed: 1
+
+#imagenet total number 14M, num_steps: 2000,000, train_batch_size: 64, eval_every: 40,000(10h); 1epoch=200,000
+train:
+  num_classes: 1000
+  load: False
+  GPU_num: 2
+  num_steps: 10000000
+  train_batch_size: 64
+  eval_every: 100000
+
+optimizer:
+  optimizer: SGD
+  learning_rate: 0.001
+  weight_decay: 0.01
+
+scheduler:
+  use: False
+  warmup_steps: 0
