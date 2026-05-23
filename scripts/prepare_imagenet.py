@@ -1,7 +1,7 @@
 import numpy as np
 import os
 NUM_CLASSES=1000
-root_dir="/home/pan/Desktop/dataset/imagenet2012/"
+root_dir = "/path/to/imagenet2012/"  # edit to point at your local ImageNet directory
 
 num_classes=NUM_CLASSES
 train_filename = []

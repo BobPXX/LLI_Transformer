@@ -1,19 +1,14 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
-
 import random
 import logging
 import numpy as np
-from datetime import timedelta
 import torch
 from tqdm import tqdm
 from omegaconf import OmegaConf
-from utils.scheduler import WarmupCosineSchedule
-from utils.data_utils import get_loader
-import torch.distributed as dist
 from tensorboardX import SummaryWriter
 
-from model import LLI_Transformer
+from lli_transformer.scheduler import WarmupCosineSchedule
+from lli_transformer.data_utils import get_loader
+from lli_transformer.model import LLI_Transformer
 
 writer=SummaryWriter('log')
 logger = logging.getLogger(__name__)
@@ -132,15 +127,17 @@ def train(cfg):
     train_loader, val_loader = get_loader(cfg)
 
     # Prepare optimizer and scheduler
-    if cfg.optimizer.optimizer=='SGD':
+    if cfg.optimizer.optimizer == 'SGD':
         optimizer = torch.optim.SGD(model.parameters(),
                                 lr=cfg.optimizer.learning_rate,
                                 momentum=0.9,
                                 weight_decay=cfg.optimizer.weight_decay)
-    if cfg.optimizer.optimizer=='AdamW':
+    elif cfg.optimizer.optimizer == 'AdamW':
         optimizer = torch.optim.AdamW(model.parameters(),
                                 lr=cfg.optimizer.learning_rate,
                                 weight_decay=cfg.optimizer.weight_decay)
+    else:
+        raise ValueError(f"Unknown optimizer: {cfg.optimizer.optimizer}")
     t_total = cfg.train.num_steps
 
     scheduler = WarmupCosineSchedule(optimizer, warmup_steps=cfg.scheduler.warmup_steps, t_total=t_total)
@@ -155,7 +152,8 @@ def train(cfg):
     logger.info("***** Running training *****")
     logger.info("  Total optimization steps = %d", cfg.train.num_steps)
     logger.info("  Instantaneous batch size per GPU = %d", cfg.train.train_batch_size)
-    while True:
+    done = False
+    while not done:
         model.train()
         epoch_iterator = tqdm(train_loader,
                               desc="Training (X / X Steps) (loss=X.X)",
@@ -171,8 +169,7 @@ def train(cfg):
             loss.backward()
             losses.update(loss.item())
 
-            #torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            if cfg.scheduler.use==True:
+            if cfg.scheduler.use:
                 scheduler.step()
             optimizer.step()
             optimizer.zero_grad()
@@ -188,32 +185,22 @@ def train(cfg):
                     best_acc = accuracy
                 model.train()
 
-            if global_step % t_total == 0:
+            if global_step >= t_total:
+                done = True
                 break
         losses.reset()
-
-        if global_step % t_total == 0:
-            break
 
     logger.info("Best Accuracy: \t%f" % best_acc)
     logger.info("End Training!")
 
 
 def main():
-    dist.init_process_group(backend='nccl')
-    cfg = OmegaConf.load('imagenet_configs.yaml')
+    cfg = OmegaConf.load('configs/imagenet.yaml')
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.INFO)
     set_seed(cfg)
-
-    model = setup(cfg)
-    model.cuda()
-    dummy_input=torch.rand(1,3,224,224).cuda()
-    with SummaryWriter(comment='LLITransformer') as w:
-        w.add_graph(model,(dummy_input.to(torch.float),))
-
 
     train(cfg)
 

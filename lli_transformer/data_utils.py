@@ -1,8 +1,5 @@
-import torch
-
-from torchvision import transforms, datasets
-from torch.utils.data import DataLoader, RandomSampler, DistributedSampler, SequentialSampler
-from utils.imagenet import get_data
+from torch.utils.data import DataLoader, DistributedSampler
+from lli_transformer.dataset import get_data
 
 def get_loader(cfg):
     train_dataset = get_data(

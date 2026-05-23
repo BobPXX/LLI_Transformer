@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Training artifacts
+log/
+runs/
+checkpoints/
+*.pth
+*.ckpt
+*.npy
